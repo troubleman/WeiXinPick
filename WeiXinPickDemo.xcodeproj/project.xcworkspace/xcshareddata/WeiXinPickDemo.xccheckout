@@ -14,11 +14,11 @@
 		<string>https://github.com/loveace/WeiXinPick.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>WeiXinPickDemo/WeiXinPickDemo.xcodeproj</string>
+	<string>WeiXinPickDemo.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
 		<key>70E926527927C2B554F8091875D065FABD3221E2</key>
-		<string>../../..</string>
+		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/loveace/WeiXinPick.git</string>
