@@ -9,7 +9,7 @@
 #import "WeiXinPickView.h"
 #import <AssetsLibrary/AssetsLibrary.h>
 
-#define maxPicNumber 99
+#define maxPicNumber 999
 #define maxScale 1.3
 #define minScale 0.4
 #define collectionCellHeight 188
@@ -165,7 +165,6 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UITableView *tableView;
 
-@property (nonatomic, strong) NSMutableArray *imageArrays;
 @property (nonatomic, strong) ALAssetsLibrary *assetsLibrary;
 @property (nonatomic, strong) ALAssetsGroup *assetsGroup;
 @property (nonatomic, strong) NSMutableArray *assets;
@@ -213,22 +212,13 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
 
 - (void)setupAssets
 {
-    if (!self.imageArrays){
-        self.imageArrays = [NSMutableArray array];
-    }
-    else if(self.imageArrays.count > 0){
-        [self.imageArrays removeAllObjects];
-    }
     if (!self.assets){
         self.assets = [NSMutableArray array];
     }
     else if(self.assets.count > 0){
         [self.assets removeAllObjects];
     }
-    
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
-        
-        ALAssetsGroupEnumerationResultsBlock resultsBlock = ^(ALAsset *asset, NSUInteger index, BOOL *stop) {
+    ALAssetsGroupEnumerationResultsBlock resultsBlock = ^(ALAsset *asset, NSUInteger index, BOOL *stop) {
             if (asset)
             {
                 if (self.assets.count > maxPicNumber) {
@@ -239,16 +229,7 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
                 }
                 NSString *type = [asset valueForProperty:ALAssetPropertyType];
                 if ([type isEqual:ALAssetTypePhoto]){
-                    UIImage *image = [UIImage imageWithCGImage: [asset aspectRatioThumbnail]];
-                    [self.imageArrays addObject:image];
-                    
                     [self.assets addObject:asset];
-                    
-                    if (self.assets.count == 5) {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            [self.collectionView reloadData];
-                        });
-                    }
                 }
                 
             }
@@ -258,9 +239,7 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
                 });
             }
         };
-        [self.assetsGroup enumerateAssetsWithOptions:NSEnumerationReverse usingBlock:resultsBlock];
-    });
-    
+    [self.assetsGroup enumerateAssetsWithOptions:NSEnumerationReverse usingBlock:resultsBlock];
 }
 
 #pragma mark - ALAssetsLibrary
@@ -361,7 +340,7 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
 {
-    return self.imageArrays.count;
+    return self.assets.count;
 }
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
@@ -369,9 +348,9 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
     WeiXinPickCollectionViewCell *cell =nil;
     NSString *cellIdentifier = NSStringFromClass([WeiXinPickCollectionViewCell class]);
     cell = [collectionView dequeueReusableCellWithReuseIdentifier:cellIdentifier forIndexPath:indexPath];
-    
-    cell.thumbnail.image = self.imageArrays[indexPath.row];
-    
+    ALAsset *asset = self.assets[indexPath.row];
+    UIImage *image = [UIImage imageWithCGImage: [asset aspectRatioThumbnail]];
+    cell.thumbnail.image = image;
     return cell;
 }
 
@@ -392,10 +371,12 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
     [collectionView bringSubviewToFront:pictureSelectView];
 }
 
+// 按比例缩放图片
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    UIImage *image = self.imageArrays[indexPath.row];
-    CGFloat scale = image.size.width/ image.size.height;
+    ALAsset *asset = self.assets[indexPath.row];
+    CGSize size = [asset defaultRepresentation].dimensions;
+    CGFloat scale = size.width/ size.height;
     if (scale < minScale) {
         scale = minScale;
     }else if(scale > maxScale){
@@ -513,25 +494,6 @@ NSString * const WeiXinPickFlowLayoutKind = @"select";
     return 5;
 }
 
-
-#pragma mark -- private method
-- (NSArray*)sortObjectsWithFrame:(NSArray*)objects
-{
-    NSComparator comparatorBlock = ^(id obj1, id obj2) {
-        if ([obj1 frame].origin.x > [obj2 frame].origin.x) {
-            return (NSComparisonResult)NSOrderedDescending;
-        }
-        if ([obj1 frame].origin.x < [obj2 frame].origin.x) {
-            return (NSComparisonResult)NSOrderedAscending;
-        }
-        return (NSComparisonResult)NSOrderedSame;
-    };
-    
-    NSMutableArray *fieldsSort = [NSMutableArray.alloc initWithArray:objects];
-    [fieldsSort sortUsingComparator:comparatorBlock];
-    
-    return [NSArray arrayWithArray:fieldsSort];
-}
 
 // 点击空白处消失
 -(void)dismiss:(UITapGestureRecognizer *)tap
